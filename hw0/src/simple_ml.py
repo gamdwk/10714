@@ -86,7 +86,12 @@ def softmax_loss(Z, y):
         Average softmax loss over the sample.
     """
     ### BEGIN YOUR CODE
-    pass
+    """print(Z,y)
+    x1 = np.log(np.exp(Z).sum(axis=1))
+    # 整数数组索引
+    x2 = Z[np.arange(Z.shape[0]), y]
+    return np.average(x1-x2)"""
+    return np.average(np.log(np.sum(np.exp(Z), axis=1)) - Z[np.arange(Z.shape[0]), y])
     ### END YOUR CODE
 
 
@@ -109,7 +114,17 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    for begin in range(0, y.shape[0], batch):
+        end = min(y.shape[0], begin + batch)
+        batch_size = end - begin
+        batch_y = y[begin:end]
+        batch_X = X[begin:end]
+        hx = batch_X @ theta  # n*k
+        Z = np.divide(np.exp(hx), np.reshape(np.exp(hx).sum(axis=1), (hx.shape[0], 1)))
+        Iy = np.zeros(Z.shape)
+        Iy[np.arange(Iy.shape[0]), batch_y] = 1
+        gradient = (1 / batch_size) * batch_X.T @ (Z - Iy)
+        theta -= lr * gradient
     ### END YOUR CODE
 
 
@@ -136,7 +151,21 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
         None
     """
     ### BEGIN YOUR CODE
-    pass
+    for begin in range(0, y.shape[0], batch):
+        end = min(y.shape[0], begin + batch)
+        batch_size = end - begin
+        batch_y = y[begin:end]
+        batch_X = X[begin:end]
+        Z1 = np.maximum(batch_X @ W1, 0)
+        Z2_exp = np.exp(Z1 @ W2)
+        Iy = np.zeros(Z2_exp.shape)
+        Iy[np.arange(Iy.shape[0]), batch_y] = 1
+        G2 = np.divide(Z2_exp, Z2_exp.sum(axis=1).reshape((Z2_exp.shape[0],1))) - Iy
+        Iz = np.zeros(Z1.shape)
+        Iz[Z1 > 0] = 1
+        G1 = Iz * (G2 @ W2.T)
+        W1 -= lr/batch_size * batch_X.T @ G1
+        W2 -= lr/batch_size * Z1.T @ G2
     ### END YOUR CODE
 
 

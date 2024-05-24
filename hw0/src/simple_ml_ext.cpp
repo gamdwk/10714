@@ -33,7 +33,56 @@ void softmax_regression_epoch_cpp(const float *X, const unsigned char *y,
      */
 
     /// BEGIN YOUR CODE
+    size_t begin=0,end;
+    for(begin=0;begin<m;begin+=batch)
+    {
+        //end = min(y.shape[0], begin + batch)
+        end = std::min(begin+batch, m);
+        size_t batch_size = end - begin;
+        float hx[batch_size][k];
+        // hx = batch_X @ theta
+        for(size_t i=0;i<batch_size;++i){
+            for(size_t j=0;j<k;++j){
+                hx[i][j]=0;
+                for(size_t z=0;z<n;++z){
+                    //X:m*n,theta:n*k
+                    hx[i][j] += X[(begin+i)*n+z]*theta[z*k+j];
+                }
+            }
+        }
+        // Z = np.divide(np.exp(hx), np.reshape(np.exp(hx).sum(axis=1), (hx.shape[0], 1)))
+        // Iy = np.zeros(Z.shape)
+        // Iy[np.arange(Iy.shape[0]), batch_y] = 1
 
+        float Z_sub_Iy[batch_size][k];
+        for(size_t i=0;i<batch_size;++i){
+            float exp_sum=0;
+            for(size_t j=0;j<k;++j){
+                Z_sub_Iy[i][j] = std::exp(hx[i][j]);
+                exp_sum += Z_sub_Iy[i][j];
+            }
+            for(size_t j=0;j<k;++j){
+                Z_sub_Iy[i][j] = Z_sub_Iy[i][j]/exp_sum;
+                // Z - Iy
+                if(j==y[begin+i]){
+                    Z_sub_Iy[i][j] -= 1;
+                }
+            }
+        }
+        // gradient = (1 / batch_size) * batch_X.T @ (Z - Iy)
+        // theta -= lr * gradient
+        // float gradient[n][k]
+        for(size_t i=0;i<n;++i){
+            for(size_t j=0;j<k;++j){
+                float gradient=0;
+                for(size_t z=0;z<batch_size;++z){
+                    //X:m*n,theta:n*k
+                    gradient += X[(begin+z)*n+i]*Z_sub_Iy[z][j] / (float)(batch_size);
+                }
+                theta[i*k+j] -= lr * gradient;
+            }
+        }
+    }
     /// END YOUR CODE
 }
 
