@@ -25,7 +25,11 @@ class SGD(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        for p in self.params:
+            if p not in self.u.keys():
+                self.u[p] = ndl.init.zeros(*p.shape,device=p.device, dtype=p.dtype, requires_grad=False)
+            self.u[p].data = self.momentum * self.u[p].data + (1. - self.momentum) * (p.grad.data + self.weight_decay * p.data)
+            p.data = p.data - self.lr * self.u[p].data
         ### END YOUR SOLUTION
 
     def clip_grad_norm(self, max_norm=0.25):
@@ -60,5 +64,16 @@ class Adam(Optimizer):
 
     def step(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.t = self.t + 1
+        for p in self.params:
+            if p not in self.m:
+                self.m[p] = ndl.init.zeros_like(p.data, device=p.data.device, requires_grad=False)
+            if p not in self.v:
+                self.v[p] = ndl.init.zeros_like(p.data, device=p.data.device, requires_grad=False)
+            l2_p = p.grad.data + self.weight_decay * p.data
+            self.m[p].data = self.beta1 * self.m[p].data + (1 - self.beta1) * l2_p
+            self.v[p].data = self.beta2 * self.v[p].data + (1 - self.beta2) * (l2_p * l2_p)
+            m = self.m[p].data / (1 - self.beta1 ** self.t) if self.t > 0 else self.m[p].data
+            v = self.v[p].data / (1 - self.beta2 ** self.t) if self.t > 0 else self.v[p].data
+            p.data = p.data - self.lr * m.data / (v.data ** 0.5 + self.eps)
         ### END YOUR SOLUTION

@@ -59,13 +59,27 @@ class DataLoader:
                                            range(batch_size, len(dataset), batch_size))
 
     def __iter__(self):
+        """
+        This function defines an iterator for a dataset, potentially shuffling the data before splitting
+        it into batches.
+        :return: The `self` object is being returned.
+        """
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        self.index = 0
+        if self.shuffle:
+            self.ordering = np.array_split( np.random.permutation(len(self.dataset)),
+                                           range(self.batch_size, len(self.dataset), self.batch_size))
         ### END YOUR SOLUTION
         return self
 
     def __next__(self):
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if self.index < len(self.ordering):
+            indices = self.ordering[self.index]
+            self.index += 1
+            return [Tensor(x, device=None, requires_grad=False) for x in self.dataset[indices]]
+        else:
+            raise StopIteration
+        
         ### END YOUR SOLUTION
 
