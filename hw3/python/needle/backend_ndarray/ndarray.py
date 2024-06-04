@@ -247,7 +247,9 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        if prod(self._shape) != prod(new_shape) or self.is_compact() is False:
+            raise ValueError("shape is not equal or array is not compact")
+        return self.as_strided(shape=new_shape, strides=self.compact_strides(new_shape))
         ### END YOUR SOLUTION
 
     def permute(self, new_axes):
@@ -272,7 +274,8 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        return self.as_strided(shape=tuple(self._shape[i] for i in new_axes), 
+                               strides=tuple(self._strides[i] for i in new_axes))
         ### END YOUR SOLUTION
 
     def broadcast_to(self, new_shape):
@@ -296,7 +299,13 @@ class NDArray:
         """
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        assert len(new_shape) == len(self.shape), "Shape size not same"
+        new_stride = list(self._strides)
+        for i in range(len(new_shape)):
+            if new_shape[i] != self._shape[i]:
+                assert self._shape[i] == 1, "Shape is not equal and not one"
+                new_stride[i] = 0
+        return self.as_strided(shape=new_shape, strides=tuple(new_stride))
         ### END YOUR SOLUTION
 
     ### Get and set elements
@@ -363,7 +372,15 @@ class NDArray:
         assert len(idxs) == self.ndim, "Need indexes equal to number of dimensions"
 
         ### BEGIN YOUR SOLUTION
-        raise NotImplementedError()
+        new_shape = list(self._shape)
+        new_stride = list(self._strides)
+        offset = 0
+        for i, sl in enumerate(idxs):
+            start, end, step = sl.start, sl.stop, sl.step
+            new_shape[i] = math.ceil((end - start) / step)
+            new_stride[i] = step * self._strides[i]
+            offset += start * self._strides[i]
+        return self.make(new_shape, tuple(new_stride), self._device, self._handle, offset)
         ### END YOUR SOLUTION
 
     def __setitem__(self, idxs, other):
